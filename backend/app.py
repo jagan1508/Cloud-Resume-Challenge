@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     
     # Connection check
     try:
-        app.visitors_table = app.table_client.get_table_client("Visitors")
+        app.visitors_table = app.table_client.get_table_client("Main")
         print("✅ Connected to Table API")
     except Exception as e:
         print(f"❌ Connection failed: {e}")
@@ -39,7 +39,13 @@ def home():
     return {"message": "Welcome to the Cloud Resume Challenge!"}
 
 @app.get("/visitors-count")
-def visitors_count():
-    global count
-    count += 1
-    return {"visitors_count": count}
+async def visitors_count():
+    partition_key = "Visitors"
+    row_key = "Count"
+    entity = await app.visitors_table.get_entity(partition_key, row_key)
+    #print(f"Current count: {entity['Count'].value}")
+    print(type(entity["Count"]))
+    cur_val=entity["Count"]+1
+    entity["Count"] = cur_val
+    await app.visitors_table.update_entity(entity)
+    return {"visitors_count": entity["Count"]}
