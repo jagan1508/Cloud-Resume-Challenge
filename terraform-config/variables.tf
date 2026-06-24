@@ -10,10 +10,16 @@ variable "sa_name" {
 
 }
 
+variable "cosmosdb_account_name" {
+  default = "tfarc-cosmosdb"
+}
+variable "tables" {}
+
 locals {
   files = {
     "index.html" = "text/html"
-    "style.css" = "text/css"
-    "script.js"     = "application/javascript"
+    "style.css"  = "text/css"
+    "script.js"  = "application/javascript"
   }
 }
+

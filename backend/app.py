@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from dotenv import dotenv_values
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from azure.core.exceptions import ResourceNotFoundError
+
 
 config = dotenv_values(".env")
 
@@ -12,20 +14,19 @@ from azure.data.tables.aio import TableServiceClient
 
 count =0
 config = {
-    "URI": config.get("URI"),
-    "KEY": config.get("KEY")
+    "CONNECTION_STRING": config.get("CONNECTION_STRING")
 }
 
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    conn_str = f"DefaultEndpointsProtocol=https;AccountName=azurecdbarc;AccountKey={config['KEY']};TableEndpoint={config['URI']};"
+    conn_str = config.get("CONNECTION_STRING")
     app.table_client = TableServiceClient.from_connection_string(conn_str)
     
     # Connection check
     try:
-        app.visitors_table = app.table_client.get_table_client("Main")
+        app.visitors_table = app.table_client.get_table_client("VisitorCounter")
         print("✅ Connected to Table API")
     except Exception as e:
         print(f"❌ Connection failed: {e}")
@@ -54,10 +55,14 @@ def home():
 async def visitors_count():
     partition_key = "Visitors"
     row_key = "Count"
-    entity = await app.visitors_table.get_entity(partition_key, row_key)
+    try:
+        entity = await app.visitors_table.get_entity(partition_key, row_key)
+        cur_val=entity["Count"]+1
+        entity["Count"] = cur_val
+
+    except ResourceNotFoundError    :
+        entity = {"PartitionKey": partition_key, "RowKey": row_key, "Count": 1}
+
     #print(f"Current count: {entity['Count'].value}")
-    print(type(entity["Count"]))
-    cur_val=entity["Count"]+1
-    entity["Count"] = cur_val
-    await app.visitors_table.update_entity(entity)
+    await app.visitors_table.upsert_entity(entity)
     return {"visitors_count": entity["Count"]}
