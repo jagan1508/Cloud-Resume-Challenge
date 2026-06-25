@@ -6,6 +6,7 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.data.tables import UpdateMode
 
 
+
 config = dotenv_values(".env")
 
 from contextlib import asynccontextmanager
@@ -24,17 +25,25 @@ config = {
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     conn_str = config.get("CONNECTION_STRING")
-    app.table_client = TableServiceClient.from_connection_string(conn_str)
-    
-    # Connection check
+    app.state.visitor_count = getattr(app.state, "visitor_count", 0)
+    app.state.table_client = None
+    app.state.visitors_table = None
+
+    if not conn_str:
+        print("No CONNECTION_STRING provided; using in-memory visitor count")
+        yield
+        return
+
     try:
-        app.visitors_table = app.table_client.get_table_client("VisitorCounter")
+        app.state.table_client = TableServiceClient.from_connection_string(conn_str)
+        app.state.visitors_table = app.state.table_client.get_table_client("VisitorCounter")
         print("Connected to Table API")
     except Exception as e:
         print(f"Connection failed: {e}")
-    
+
     yield
-    await app.table_client.close()
+    if app.state.table_client is not None:
+        await app.state.table_client.close()
 
     
 api= FastAPI(lifespan=lifespan)
@@ -55,17 +64,20 @@ def home():
 
 @api.get("/visitors-count")
 async def visitors_count():
+    if getattr(api.state, "visitors_table", None) is None:
+        api.state.visitor_count = getattr(api.state, "visitor_count", 0) + 1
+        return {"visitors_count": api.state.visitor_count}
+
     partition_key = "Visitors"
     row_key = "Count"
     try:
-        entity = await api.visitors_table.get_entity(partition_key, row_key)
-        cur_val=entity["Count"]+1
+        entity = await api.state.visitors_table.get_entity(partition_key, row_key)
+        cur_val = entity["Count"] + 1
         entity["Count"] = cur_val
-        await api.visitors_table.update_entity(entity,mode=UpdateMode.MERGE)
+        await api.state.visitors_table.update_entity(entity, mode=UpdateMode.MERGE)
+        return {"visitors_count": entity["Count"]}
 
-    except ResourceNotFoundError    :
+    except ResourceNotFoundError:
         entity = {"PartitionKey": partition_key, "RowKey": row_key, "Count": 1}
-        await api.visitors_table.create_entity(entity)
-
-    #print(f"Current count: {entity['Count'].value}")
-    return {"visitors_count": entity["Count"]}
+        await api.state.visitors_table.create_entity(entity)
+        return {"visitors_count": entity["Count"]}
