@@ -39,7 +39,7 @@ resource "azurerm_storage_blob" "index" {
   storage_account_name   = azurerm_storage_account.storage.name
   storage_container_name = "$web"
   type                   = "Block"
-  source                 = "D://projects//Cloud-Resume-Challenge//frontend//${each.key}"
+  source                 = "${path.module}/../frontend/${each.key}"
   content_type           = each.value
   depends_on = [
     azurerm_storage_account.storage
