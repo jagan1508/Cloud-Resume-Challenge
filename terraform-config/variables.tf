@@ -1,18 +1,9 @@
-variable "rg_name" {
-  default = "myTFResourceGroup"
-}
-variable "location" {
-  default = "westus2"
-}
+variable "rg_name" {}
+variable "location" {}
 
-variable "sa_name" {
-  default = "tfarcstorage"
+variable "sa_name" {}
 
-}
-
-variable "cosmosdb_account_name" {
-  default = "tfarc-cosmosdb"
-}
+variable "cosmosdb_account_name" {}
 variable "tables" {}
 
 locals {
