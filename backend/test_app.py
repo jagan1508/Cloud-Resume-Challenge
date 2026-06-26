@@ -1,5 +1,11 @@
+import os
+
+os.environ.pop("CONNECTION_STRING", None)
+
 from fastapi.testclient import TestClient
 from app import api
+
+
 
 
 def test_home():

@@ -1,26 +1,20 @@
 from fastapi import FastAPI
-from dotenv import dotenv_values
-from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from azure.core.exceptions import ResourceNotFoundError
 from azure.data.tables import UpdateMode
 
 
-
-config = dotenv_values(".env")
-
 from contextlib import asynccontextmanager
 from azure.data.tables.aio import TableServiceClient
-    
+
 
 import os
 from dotenv import load_dotenv
 
-load_dotenv() 
 
-config = {
-    "CONNECTION_STRING": os.environ.get("CONNECTION_STRING")
-}
+
+config = {"CONNECTION_STRING": os.environ.get("CONNECTION_STRING")}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,7 +30,9 @@ async def lifespan(app: FastAPI):
 
     try:
         app.state.table_client = TableServiceClient.from_connection_string(conn_str)
-        app.state.visitors_table = app.state.table_client.get_table_client("VisitorCounter")
+        app.state.visitors_table = app.state.table_client.get_table_client(
+            "VisitorCounter"
+        )
         print("Connected to Table API")
     except Exception as e:
         print(f"Connection failed: {e}")
@@ -45,8 +41,8 @@ async def lifespan(app: FastAPI):
     if app.state.table_client is not None:
         await app.state.table_client.close()
 
-    
-api= FastAPI(lifespan=lifespan)
+
+api = FastAPI(lifespan=lifespan)
 
 api.add_middleware(
     CORSMiddleware,
@@ -57,10 +53,10 @@ api.add_middleware(
 )
 
 
-
 @api.get("/")
 def home():
     return {"message": "Welcome to the Cloud Resume Challenge!"}
+
 
 @api.get("/visitors-count")
 async def visitors_count():
