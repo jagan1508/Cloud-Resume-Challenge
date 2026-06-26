@@ -9,7 +9,6 @@ from azure.data.tables.aio import TableServiceClient
 
 
 import os
-from dotenv import load_dotenv
 
 
 
