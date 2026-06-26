@@ -1,8 +1,8 @@
 name: 'Terraform Plan/Apply'
 on:
-#  push:
-#    branches:
-#    - main
+  push:
+    branches:
+    - main
   pull_request:
     branches:
     - main
@@ -64,3 +64,5 @@ jobs:
       with:
         name: tfplan
         path: tfplan
+    - name: Terraform Apply
+      run: terraform apply 
