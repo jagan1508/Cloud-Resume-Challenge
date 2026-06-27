@@ -4,6 +4,7 @@ terraform {
     storage_account_name = "tfarcstorage"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
+    use_oidc             = true
   }
 
 }
