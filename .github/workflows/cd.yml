@@ -105,6 +105,8 @@ jobs:
       with: 
         app-name: counter-functionapparc 
         package: ./backend
+        scm-do-build-during-deployment: true
+        enable-oryx-build: true
     - name: Upload frontend to Static Website 
       run: |
         az storage blob upload-batch \ 
@@ -113,5 +115,6 @@ jobs:
         --source frontend \ 
         --overwrite \ 
         --auth-mode login
+
 
 
