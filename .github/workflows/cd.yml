@@ -71,7 +71,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: tfplan
-        path: erraform-config/tfplan
+        path: terraform-config/tfplan
     - name: Terraform Apply
       working-directory: terraform-config
       run: terraform apply -auto-approve tfplan
@@ -102,6 +102,6 @@ jobs:
     - name: Publish Function App
       working-directory: ./backend
       run: |
-        func azure functionapp publish counter-functionapparc --python
+        func azure functionapp publish counter-functionapparc --python --build remote --verbose 
 
 
