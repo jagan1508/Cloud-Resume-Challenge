@@ -108,13 +108,7 @@ jobs:
         scm-do-build-during-deployment: true
         enable-oryx-build: true
     - name: Upload frontend to Static Website 
-      run: |
-        az storage blob upload-batch \ 
-        --account-name tfarcstorage \ 
-        --destination '$web' \ 
-        --source frontend \ 
-        --overwrite \ 
-        --auth-mode login
+      run: az storage blob upload-batch --account-name tfarcstorage --account-name tfarcstorage --destination "\$web" --source frontend --overwrite --auth-mode login
 
 
 
