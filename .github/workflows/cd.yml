@@ -3,9 +3,11 @@ on:
   push:
     branches:
     - main
-  pull_request:
-    branches:
-    - main
+    paths: 
+      - "backend/**" 
+      - "frontend/**" 
+      - "terraform-config/**" 
+      - ".github/workflows/cd.yml"
 permissions:
   id-token: write
   contents: read
@@ -74,7 +76,39 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: tfplan
-        path: erraform-config/tfplan
+        path: terraform-config/tfplan
     - name: Terraform Apply
       working-directory: terraform-config
       run: terraform apply -auto-approve tfplan
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.ARM_CLIENT_ID }}
+        tenant-id: ${{ secrets.ARM_TENANT_ID }}
+        subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+        cache-dependency-path: backend/requirements.txt
+    
+    - name: Install Python dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Deploy Azure Function 
+      uses: Azure/functions-action@v1 
+      with: 
+        app-name: counter-functionapparc 
+        package: ./backend
+        scm-do-build-during-deployment: true
+        enable-oryx-build: true
+    - name: Upload frontend to Static Website 
+      run: az storage blob upload-batch --account-name tfarcstorage --account-name tfarcstorage --destination "\$web" --source frontend --overwrite --auth-mode login
+
+
+
